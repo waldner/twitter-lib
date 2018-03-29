@@ -7,7 +7,7 @@ tt_get_curtime(){
   if [ ${BASH_VERSINFO[0]} -ge 4 ] && [ ${BASH_VERSINFO[1]} -ge 2 ]; then
     printf '%(%Y-%m-%d %H:%M:%S)T\n' -1
   else
-    $date +"%Y-%m-%d %H:%M:%S"
+    $tt_date +"%Y-%m-%d %H:%M:%S"
   fi
 }
 
@@ -67,17 +67,17 @@ check_required_binaries(){
 
   local retcode=0
 
-  curl=$(command -v curl)
-  awk=$(command -v awk)
-  openssl=$(command -v openssl)
-  sort=$(command -v sort)
-  date=$(command -v date)
+  tt_curl=$(command -v curl)
+  tt_awk=$(command -v awk)
+  tt_openssl=$(command -v openssl)
+  tt_sort=$(command -v sort)
+  tt_date=$(command -v date)
 
-  ( [ "$curl" != "" ] && \
-    [ "$awk" != "" ] && \
-    [ "$openssl" != "" ] && \
-    [ "$sort" != "" ] && \
-    [ "$date" != "" ] ) || \
+  ( [ "$tt_curl" != "" ] && \
+    [ "$tt_awk" != "" ] && \
+    [ "$tt_openssl" != "" ] && \
+    [ "$tt_sort" != "" ] && \
+    [ "$tt_date" != "" ] ) || \
   { tt_log ERROR "Cannot find needed binaries, make sure you have curl, awk, openssl, sort and date in your PATH" && return 1; }
 
   tt_binaries_checked=1
@@ -162,8 +162,8 @@ tt_compute_oauth(){
   http_url=$2
   shift 2
 
-  oauth_nonce="$($openssl rand -base64 15)"
-  oauth_timestamp="$($date +%s)"
+  oauth_nonce="$($tt_openssl rand -base64 15)"
+  oauth_timestamp="$($tt_date +%s)"
 
   local -A sig_parms=( [oauth_consumer_key]="$tt_oauth_consumer_key"
                        [oauth_token]="$tt_oauth_token"
@@ -197,13 +197,13 @@ tt_compute_oauth(){
     oauth_parstring="${oauth_parstring}$(tt_encode_key_value "${arg}")${nl}"
   done
 
-  oauth_parstring=$(printf '%s' "$oauth_parstring" | $sort | $awk '{printf "%s%s", sep, $0; sep="&"}')
+  oauth_parstring=$(printf '%s' "$oauth_parstring" | $tt_sort | $tt_awk '{printf "%s%s", sep, $0; sep="&"}')
 
   tt_log DEBUG "OAuth parstring is $oauth_parstring"
 
   sig_base_string="${http_method}&$(tt_percent_encode "${http_url}")&$(tt_percent_encode "${oauth_parstring}")"
   sig_key="$(tt_percent_encode "${tt_oauth_consumer_secret}")&$(tt_percent_encode "${tt_oauth_token_secret}")"
-  oauth_signature="$(tt_percent_encode "$(printf '%s' "${sig_base_string}" | $openssl sha1 -hmac "${sig_key}" -binary | $openssl base64)")"
+  oauth_signature="$(tt_percent_encode "$(printf '%s' "${sig_base_string}" | $tt_openssl sha1 -hmac "${sig_key}" -binary | $tt_openssl base64)")"
 
   tt_log DEBUG "OAuth signature, percent-encoded is $oauth_signature"
 
@@ -252,15 +252,15 @@ tt_do_curl(){
   local result
 
   result=$(
-    $curl --compressed -s \
+    $tt_curl --compressed -s \
       -H "Expect:" \
       -D- -A "$tt_user_agent" \
       "$@"
   )
 
-  tt_last_http_headers=$($awk '/^\r$/{ exit }1' <<< "$result")
-  tt_last_http_body=$($awk 'ok; /^\r$/ { ok = 1 }' <<< "$result")
-  tt_last_http_code=$($awk '/^HTTP/ { print $2; exit }' <<< "$result")
+  tt_last_http_headers=$($tt_awk '/^\r$/{ exit }1' <<< "$result")
+  tt_last_http_body=$($tt_awk 'ok; /^\r$/ { ok = 1 }' <<< "$result")
+  tt_last_http_code=$($tt_awk '/^HTTP/ { print $2; exit }' <<< "$result")
 
 }
 
