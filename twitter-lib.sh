@@ -199,13 +199,9 @@ tt_compute_oauth(){
 
   oauth_parstring=$(printf '%s' "$oauth_parstring" | $tt_sort | $tt_awk '{printf "%s%s", sep, $0; sep="&"}')
 
-  tt_log DEBUG "OAuth parstring is $oauth_parstring"
-
   sig_base_string="${http_method}&$(tt_percent_encode "${http_url}")&$(tt_percent_encode "${oauth_parstring}")"
   sig_key="$(tt_percent_encode "${tt_oauth_consumer_secret}")&$(tt_percent_encode "${tt_oauth_token_secret}")"
   oauth_signature="$(tt_percent_encode "$(printf '%s' "${sig_base_string}" | $tt_openssl sha1 -hmac "${sig_key}" -binary | $tt_openssl base64)")"
-
-  tt_log DEBUG "OAuth signature, percent-encoded is $oauth_signature"
 
   echo "${oauth_auth}oauth_signature=\"${oauth_signature}\""
 
@@ -221,6 +217,8 @@ tt_do_call(){
   local url_parms oauth_auth http_method http_url sep arg
 
   oauth_auth=$(tt_compute_oauth "$@")
+
+  tt_log DEBUG "OAuth header is $oauth_auth"
 
   http_method=$1
   http_url=$2
