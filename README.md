@@ -23,19 +23,19 @@ No special installation needed. Just put **`twitter-lib.sh`** wherever you want.
 
 - Source **`twitter-lib.sh`** in your script
 
-- Implement a function called **`tt_get_userdef_credentials`** that sets the following environment variables with the corresponding values from your application: **`tt_oauth_consumer_key`**, **`tt_oauth_consumer_secret`**, **` tt_oauth_token`**, **`tt_oauth_token_secret`**. You can also optionally set **`tt_user_agent`** with the name of your app if you want, this will be set in API requests.
+- Implement a function called **`tt_get_userdef_credentials`** that sets the following environment variables with the corresponding values from your application: **`tt_lib['oauth_consumer_key']`**, **`tt_lib['oauth_consumer_secret']`**, **` tt_lib['oauth_token']`**, **`tt_lib['oauth_token_secret']`**. You can also optionally set **`tt_lib['user_agent']`** with the name of your app if you want, this will be set in API requests.
 
 - Call **`tt_do_call`** with the appropriate values to start using the API. See below for examples.
 
 ## Logging
 
-Sourcing the library gives you access to a very rudimental log function called `tt_log`. Its arguments are a log level (one of  DEBUG, INFO, NOTICE, WARNING, ERROR) and the message to log. You can use this function to log your application messages together with those coming from the library. By default, the library detects automatically whether to log to file or to stdout (if stdout is not a terminal, log to file; otherwise log to stdout). This allows eg running from cron without getting output, but still being able to manually run on the command line and see the messages. The log destination can however be forced. The minimum logging level can also be configured, or logging can be turned off altogether. See code below for examples.
+Sourcing the library gives you access to a very rudimentary log function called `tt_log`. Its arguments are a log level (one of  DEBUG, INFO, NOTICE, WARNING, ERROR) and the message to log. You can use this function to log your application messages together with those coming from the library. By default, the library detects automatically whether to log to file or to stdout (if stdout is not a terminal, log to file; otherwise log to stdout). This allows eg running from cron without getting output, but still being able to manually run on the command line and see the messages. The log destination can however be forced. The minimum logging level can also be configured, or logging can be turned off altogether. See code below for examples.
 
 ## Internals
 
-Internal communication is via global variables.
+All the library setting are stored in a global associative array called **`tt_lib[]`**
 
-After each file API function invocation, the three variables **`tt_last_http_headers`**, **`tt_last_http_body`** and **`tt_last_http_code`** contain what their name says, so they can be inspected in your code for extra control.
+After each file API function invocation, the three variables **`tt_lib['last_http_headers']`**, **`tt_lib['last_http_body']`** and **`tt_lib['last_http_code']`** contain what their name says, so they can be inspected in your code for extra control.
 
 **`tt_do_call`** computes OAuth credentials for the request and ends up calling **`tt_do_curl`** with appropriate arguments.
 
@@ -50,11 +50,11 @@ Arguments to **`tt_do_call`** are: HTTP method, URL, arguments, in this order. S
 
 # you must implement this function with the right values
 tt_get_userdef_credentials(){
-  tt_oauth_consumer_key="xxxxxxxxxx"
-  tt_oauth_consumer_secret="yyyyyyyyyyyyyyy"
-  tt_oauth_token="zzzzzzzzzzzzzzzzzzzz"
-  tt_oauth_token_secret="wwwwwwwwwwwwwwwwwwwww"
-  tt_user_agent="My Super Twitter App/1.0"    # optional
+  tt_lib['oauth_consumer_key']="xxxxxxxxxx"
+  tt_lib['oauth_consumer_secret']="yyyyyyyyyyyyyyy"
+  tt_lib['oauth_token']="zzzzzzzzzzzzzzzzzzzz"
+  tt_lib['oauth_token_secret']="wwwwwwwwwwwwwwwwwwwww"
+  tt_lib['user_agent']="My Super Twitter App/1.0"    # optional
 }
 
 . /path/to/twitter-lib.sh
@@ -76,14 +76,14 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-if [ "$tt_last_http_code" != "200" ]; then
+if [ "${tt_lib['last_http_code']}" != "200" ]; then
   tt_log ERROR "Error getting user details" 
-  # inspect $tt_last_http_headers, $tt_last_http_body etc
+  # inspect ${tt_lib['last_http_headers']}, ${tt_lib['last_http_body']} etc
 else
-  user_name=$(jq -r '.name' <<< "$tt_last_http_body")
-  user_screen_name=$(jq -r '.screen_name' <<< "$tt_last_http_body")
-  user_description=$(jq -r '.description' <<< "$tt_last_http_body")
-  user_followers=$(jq -r '.followers_count' <<< "$tt_last_http_body")
+  user_name=$(jq -r '.name' <<< "${tt_lib['last_http_body']}")
+  user_screen_name=$(jq -r '.screen_name' <<< "${tt_lib['last_http_body']}")
+  user_description=$(jq -r '.description' <<< "${tt_lib['last_http_body']}")
+  user_followers=$(jq -r '.followers_count' <<< "${tt_lib['last_http_body']}")
   # etc.
 fi
 
@@ -98,11 +98,11 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-if [ "$tt_last_http_code" != "200" ]; then
+if [ "${tt_lib['last_http_code']}" != "200" ]; then
   tt_log ERROR "Error submitting tweet"
-  # inspect $tt_last_http_headers, $tt_last_http_body etc
+  # inspect ${tt_lib['last_http_headers']}, ${tt_lib['last_http_body']} etc
 else
-  tweet_id=$(jq -r '.id_str' <<< "$tt_last_http_body")
+  tweet_id=$(jq -r '.id_str' <<< "${tt_lib['last_http_body']}")
   # etc.  
 fi
 
@@ -118,7 +118,7 @@ tt_do_call GET "https://api.twitter.com/1.1/statuses/user_timeline.json" "user_i
 while IFS= read -r tweet; do
   jq -r '.text' <<< "$tweet"
   echo "----------"
-done < <(jq -c '.[]' <<< "$tt_last_http_body")
+done < <(jq -c '.[]' <<< "${tt_lib['last_http_body']}")
 
 # ...more API calls here...
 
