@@ -6,7 +6,7 @@ declare -A tt_lib=()
 
 tt_get_curtime(){
   # avoid spawning a process if we have a capable bash
-  if [ ${BASH_VERSINFO[0]} -ge 4 ] && [ ${BASH_VERSINFO[1]} -ge 2 ]; then
+  if [ "${BASH_VERSINFO[0]}" -ge 4 ] && [ "${BASH_VERSINFO[1]}" -ge 2 ]; then
     printf '%(%Y-%m-%d %H:%M:%S)T\n' -1
   else
     "${tt_lib['date']}" +"%Y-%m-%d %H:%M:%S"
@@ -45,16 +45,17 @@ tt_lib['curtime']=${tt_lib['curtime']/ /_}
 tt_lib['log_file']="/tmp/tt_${tt_lib['curtime']}.log"
 tt_set_log_level INFO
 tt_set_logging_enabled "1"
-tt_set_log_destination
+tt_set_log_destination ""
 tt_lib['binaries_checked']=0
 
 tt_log(){
 
   local level=$1 msg=$2
 
-  local curtime=$(tt_get_curtime)
+  local curtime
+  curtime=$(tt_get_curtime)
 
-  if [ "${tt_lib['logging_enabled']}" != "0" ] && [ ${tt_log_levels[$level]} -ge ${tt_lib['current_log_level']} ]; then
+  if [ "${tt_lib['logging_enabled']}" != "0" ] && [ "${tt_log_levels[$level]}" -ge "${tt_lib['current_log_level']}" ]; then
     if [ "${tt_lib['log_destination']}" = "stdout" ]; then
       echo "$curtime $level: $msg"
     else
@@ -67,19 +68,17 @@ check_required_binaries(){
 
   tt_log DEBUG "Checking required binaries..."
 
-  local retcode=0
-
   tt_lib['curl']=$(command -v curl)
   tt_lib['awk']=$(command -v awk)
   tt_lib['openssl']=$(command -v openssl)
   tt_lib['sort']=$(command -v sort)
   tt_lib['date']=$(command -v date)
 
-  ( [ "${tt_lib['curl']}" != "" ] && \
+  { [ "${tt_lib['curl']}" != "" ] && \
     [ "${tt_lib['awk']}" != "" ] && \
     [ "${tt_lib['openssl']}" != "" ] && \
     [ "${tt_lib['sort']}" != "" ] && \
-    [ "${tt_lib['date']}" != "" ] ) || \
+    [ "${tt_lib['date']}" != "" ]; } || \
   { tt_log ERROR "Cannot find needed binaries, make sure you have curl, awk, openssl, sort and date in your PATH" && return 1; }
 
   tt_lib['binaries_checked']=1
@@ -102,10 +101,10 @@ tt_get_credentials(){
 
   $tt_userdef_cred_function   # user MUST implement this
 
-  ( [ "${tt_lib['oauth_consumer_key']}" != "" ] && \
+  { [ "${tt_lib['oauth_consumer_key']}" != "" ] && \
     [ "${tt_lib['oauth_consumer_secret']}" != "" ] && \
     [ "${tt_lib['oauth_token']}" != "" ] && \
-    [ "${tt_lib['oauth_token_secret']}" != "" ] ) || \
+    [ "${tt_lib['oauth_token_secret']}" != "" ]; } || \
 
     { tt_log ERROR "Cannot get Twitter credentials; make sure '$tt_userdef_cred_function()' sets variables 'tt_lib[oauth_consumer_key]', 'tt_lib[oauth_consumer_secret]', 'tt_lib[oauth_token]', 'tt_lib[oauth_token_secret]'" && return 1; }
 
@@ -156,8 +155,8 @@ tt_encode_key_value(){
 tt_compute_oauth(){
 
   local http_method http_url oauth_nonce
-  local oauth_timestamp local oauth_auth
-  local oauth_parstring nl arg local
+  local oauth_timestamp oauth_auth
+  local oauth_parstring nl arg
   local sig_base_string sig_key oauth_signature
 
   http_method=${1^^}
