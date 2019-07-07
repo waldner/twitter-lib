@@ -6,7 +6,8 @@ declare -A tt_lib=()
 
 tt_get_curtime(){
   # avoid spawning a process if we have a capable bash
-  if [ "${BASH_VERSINFO[0]}" -ge 4 ] && [ "${BASH_VERSINFO[1]}" -ge 2 ]; then
+  if ( [ "${BASH_VERSINFO[0]}" -ge 4 ] && [ "${BASH_VERSINFO[1]}" -ge 2 ] ) ||
+     ( [ "${BASH_VERSINFO[0]}" -gt 4 ] ); then
     printf '%(%Y-%m-%d %H:%M:%S)T\n' -1
   else
     "${tt_lib['date']}" +"%Y-%m-%d %H:%M:%S"
