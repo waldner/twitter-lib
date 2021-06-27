@@ -115,31 +115,28 @@ tt_get_credentials(){
 }
 
 # pure bash URL enconding, thanks to
-# https://gist.github.com/cdown/1163649
+# https://gist.github.com/cdown/1163649#gistcomment-1639097
 tt_percent_encode() {
 
-  local old_lc_collate=$LC_COLLATE
-  LC_COLLATE=C
+  local old_lang=$LANG
+  LANG=C
 
-  local length=${#1}
-  local offset char
-
-  local result=
+  local length="${#1}"
+  local offset char result=
 
   for (( offset = 0; offset < length; offset++ )); do
     char=${1:$offset:1}
-
-    case "$char" in
+    case $char in
       [a-zA-Z0-9.~_-])
         result="${result}${char}"
         ;;
       *)
-        result="${result}$(printf '%%%X' "'$char")"
-         ;;
+        result="${result}$(printf '%%%02X' "'$char")"
+        ;; 
     esac
   done
 
-  LC_COLLATE=$old_lc_collate
+  LANG=$old_lang
 
   echo "$result"
 }
