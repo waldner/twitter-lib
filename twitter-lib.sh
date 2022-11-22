@@ -200,7 +200,7 @@ tt_compute_oauth(){
 
   sig_base_string="${http_method}&$(tt_percent_encode "${http_url}")&$(tt_percent_encode "${oauth_parstring}")"
   sig_key="$(tt_percent_encode "${tt_lib['oauth_consumer_secret']}")&$(tt_percent_encode "${tt_lib['oauth_token_secret']}")"
-  oauth_signature="$(tt_percent_encode "$(printf '%s' "${sig_base_string}" | ${tt_lib['openssl']} sha1 -hmac "${sig_key}" -binary | ${tt_lib['openssl']} base64)")"
+  oauth_signature="$(tt_percent_encode "$(printf '%s' "${sig_base_string}" | ${tt_lib['openssl']} dgst -sha1 -hmac "${sig_key}" -binary | ${tt_lib['openssl']} base64)")"
 
   echo "${oauth_auth}oauth_signature=\"${oauth_signature}\""
 
